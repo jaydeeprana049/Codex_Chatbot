@@ -1,7 +1,7 @@
-import express from 'express';
-import * as dotenv from 'dotenv';
-import cors from 'cors';
-import { Configuration, OpenAIApi } from 'openai';
+import express from 'express'
+import * as dotenv from 'dotenv'
+import cors from 'cors'
+import { Configuration, OpenAIApi } from 'openai'
 
 dotenv.config()
 
@@ -11,15 +11,15 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express()
+app.use(cors())
+app.use(express.json())
 
 app.get('/', async (req, res) => {
     res.status(200).send({
-        message: 'Hello from CodeX',
+        message: 'Hello from CodeX!'
     })
-});
+})
 
 app.post('/', async (req, res) => {
     try {
@@ -40,10 +40,9 @@ app.post('/', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error(error)
         res.status(500).send(error || 'Something went wrong');
     }
 })
 
-app.listen(5000, () => console.log('Server is running on port http://localhost:5000'));
-
+app.listen(5000, () => console.log('AI server started on http://localhost:5000'))

@@ -1,117 +1,111 @@
+//import bot svg from assets
 import bot from './assets/bot.svg';
+//import user svg from assets
 import user from './assets/user.svg';
-
+//pick the form element from the DOM
 const form = document.querySelector('form');
+//pick the chat container from the DOM
 const chatContainer = document.querySelector('#chat_container');
 
 let loadInterval;
-
+//create a function to load the bot message with 3 dots
 function loader(element) {
-  element.textContent = '';
-
+  element.textContent = ""
   loadInterval = setInterval(() => {
-      // Update the text content of the loading indicator
-      element.textContent += '.';
+    element.textContent += "."
+    //if the text content is 4 dots, reset it to empty string
+    if (element.textContent.length === 4) {
+      element.textContent = ""
+    }
+  }, 300)
 
-      // If the loading indicator has reached three dots, reset it
-      if (element.textContent === '....') {
-          element.textContent = '';
+  }
+
+  //create a function called typeText that takes in the text and the element to type in
+  //Inside this function, create a variable called index that is equal to 0
+  //create a variable called interval that is equal to setInterval
+  //if we are still typing, add the next letter to the textContent of the element
+  //if we are done typing, clear the interval
+  function typeText(element,text) {
+    let index = 0;
+    const interval = setInterval(() => {
+      element.innerHTML += text.charAt(index);
+      index++;
+      if (index >= text.length) {
+        clearInterval(interval);
       }
-  }, 300);
-}
+    }, 20)
+  }
 
-function typeText(element, text) {
-  let index = 0;
-
-  let interval = setInterval(() => {
-      if (index < text.length) {
-          element.innerHTML += text.charAt(index);
-          index++;
-      } else {
-          clearInterval(interval)
-      }
-  }, 20)
-}
-
-// generate unique ID for each message div of bot
-// necessary for typing text effect for that specific reply
-// without unique ID, typing text will work on every element
-function generateUniqueId() {
-  const timestamp = Date.now();
-  const randomNumber = Math.random();
-  const hexadecimalString = randomNumber.toString(16);
-
-  return `id-${timestamp}-${hexadecimalString}`;
-}
+  //create a function to generate a unique id for each message to be able to map over them
+  function generateUniqueID() {
+    const timestamp = Date.now()
+    const randomNumber = Math.random()
+    const hexadecialString = randomNumber.toString(16)
+    return `id-${timestamp}-${hexadecialString}`
+  }
 
 function chatStripe(isAi, value, uniqueId) {
-  return (
-      `
-      <div class="wrapper ${isAi && 'ai'}">
-          <div class="chat">
-              <div class="profile">
-                  <img 
-                    src=${isAi ? bot : user} 
-                    alt="${isAi ? 'bot' : 'user'}" 
-                  />
-              </div>
-              <div class="message" id=${uniqueId}>${value}</div>
-          </div>
+return (  `<div class="wrapper ${isAi && 'ai'}">
+      <div class="chat">
+        <div class="profile">
+          <img src="${isAi ? bot : user}" alt="${isAi ? 'bot':'user'}" />
+        </div>
+        <div class="message" id=${uniqueId}>${value}</div>
       </div>
-  `
-  )
+    </div>
+    `)
 }
-
+  
 const handleSubmit = async (e) => {
   e.preventDefault();
-
+  //get the data of the form
   const data = new FormData(form);
-
-  // user's chatstripe
+  //create the user chatstripe
   chatContainer.innerHTML += chatStripe(false, data.get('prompt'));
-
+  //clear the form
   form.reset();
-
-  // bot's chatstripe
-  const uniqueId = generateUniqueId();
-  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
-
-  // to focus scroll to the bottom 
+  //create a unique id for the bot message
+  const uniqueId = generateUniqueID();
+  //create the bot chatstripe
+  chatContainer.innerHTML += chatStripe(true, '', uniqueId);
+  //scroll to the bottom of the chat container
   chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  // specific message div 
   const messageDiv = document.getElementById(uniqueId);
-
-  // messageDiv.innerHTML = "..."
+  //call the loader function
   loader(messageDiv);
-  
-  const response = await fetch('https://codex-chatbot-7na1.onrender.com', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            prompt: data.get('prompt')
-        })
-    })
-
-    clearInterval(loadInterval)
-    messageDiv.innerHTML = " ";
-
-    if (response.ok) {
-      const data = await response.json();
-      const parsedData = data.bot.trim(); // trims any trailing spaces/'\n' 
-
-      typeText(messageDiv, parsedData);
-  } else {
-      const err = await response.text();
-
-      messageDiv.innerHTML = "Something went wrong"
-      alert(err);
+  //fetch the response from the server
+  const response = await fetch('https://localhost:5000', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ prompt: data.get('prompt') })
+  });
+  //clear the loader interval
+  clearInterval(loadInterval);
+  //clear the message div
+  messageDiv.innerHTML = "";
+  //if response is ok, jsonify the response
+  if (response.ok) {
+    const data = await response.json();
+    const parseData = data.bot.trim()
+   
+    //call the typeText function
+    typeText(messageDiv,parseData);
+  }
+  else {
+    const err= await response.text();
+    //if response is not ok, type the error message
+    typeText(messageDiv, 'Something went wrong');
+  console.log(err);
   }
 }
 
+
+//create a function to handle the submit event
 form.addEventListener('submit', handleSubmit);
+//create a function to handle the Enter key event
 form.addEventListener('keyup', (e) => {
   if (e.keyCode === 13) {
     handleSubmit(e);
